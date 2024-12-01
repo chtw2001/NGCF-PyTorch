@@ -19,6 +19,7 @@ Ks = eval(args.Ks)
 data_generator = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
 USR_NUM, ITEM_NUM = data_generator.n_users, data_generator.n_items
 N_TRAIN, N_TEST = data_generator.n_train, data_generator.n_test
+# 따로 data split을 하지 않음. test.txt, train.txt 사용. 두 파일에 데이터 개수가 동일함. (??)
 BATCH_SIZE = args.batch_size
 
 def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
@@ -40,6 +41,7 @@ def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
 
 def get_auc(item_score, user_pos_test):
     item_score = sorted(item_score.items(), key=lambda kv: kv[1])
+    # score로 sort
     item_score.reverse()
     item_sort = [x[0] for x in item_score]
     posterior = [x[1] for x in item_score]
@@ -51,6 +53,7 @@ def get_auc(item_score, user_pos_test):
         else:
             r.append(0)
     auc = metrics.auc(ground_truth=r, prediction=posterior)
+    # metrics.AUC?
     return auc
 
 def ranklist_by_sorted(user_pos_test, test_items, rating, Ks):
@@ -85,8 +88,10 @@ def get_performance(user_pos_test, r, auc, Ks):
 
 def test_one_user(x):
     # user u's ratings for user u
+    # rate_batch[i]
     rating = x[0]
     #uid
+    # user_batch[i]
     u = x[1]
     #user u's items in the training set
     try:
@@ -103,6 +108,7 @@ def test_one_user(x):
     if args.test_flag == 'part':
         r, auc = ranklist_by_heapq(user_pos_test, test_items, rating, Ks)
     else:
+    # elif args.test_flag == 'full':
         r, auc = ranklist_by_sorted(user_pos_test, test_items, rating, Ks)
 
     return get_performance(user_pos_test, r, auc, Ks)
@@ -115,6 +121,7 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
     pool = multiprocessing.Pool(cores)
 
     u_batch_size = BATCH_SIZE * 2
+    # 왜 2를 곱할까?
     i_batch_size = BATCH_SIZE
 
     test_users = users_to_test
@@ -130,6 +137,7 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
         user_batch = test_users[start: end]
 
         if batch_test_flag:
+            # test를 모든 item이 아니라 item batch로 진행
             # batch-item test
             n_item_batchs = ITEM_NUM // i_batch_size + 1
             rate_batch = np.zeros(shape=(len(user_batch), ITEM_NUM))
@@ -154,6 +162,12 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
                                                                   drop_flag=True)
                     i_rate_batch = model.rating(u_g_embeddings, pos_i_g_embeddings).detach().cpu()
 
+                # u_g_embeddings, pos_i_g_embeddings, _ = model(user_batch,
+                #                                                 item_batch,
+                #                                                 [],
+                #                                                 drop_flag=drop_flag)
+                # i_rate_batch = model.rating(u_g_embeddings, pos_i_g_embeddings).detach().cpu()
+
                 rate_batch[:, i_start: i_end] = i_rate_batch
                 i_count += i_rate_batch.shape[1]
 
@@ -163,6 +177,7 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
             # all-item test
             item_batch = range(ITEM_NUM)
 
+            # positive, negative item은 평가하지 않음. 단순히 item에 대한 선호도 평가
             if drop_flag == False:
                 u_g_embeddings, pos_i_g_embeddings, _ = model(user_batch,
                                                               item_batch,
@@ -176,7 +191,15 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
                                                               drop_flag=True)
                 rate_batch = model.rating(u_g_embeddings, pos_i_g_embeddings).detach().cpu()
 
+            # u_g_embeddings, pos_i_g_embeddings, _ = model(user_batch,
+            #                                                 item_batch,
+            #                                                 [],
+            #                                                 drop_flag=drop_flag)
+            # i_rate_batch = model.rating(u_g_embeddings, pos_i_g_embeddings).detach().cpu()
+
         user_batch_rating_uid = zip(rate_batch.numpy(), user_batch)
+        # rate_batch -> 선호도를 담은 행렬 (user_batch x item_batch)
+        # user_batch_rating_uid -> (rate_batch[i], user_batch[i]) ... 
         batch_result = pool.map(test_one_user, user_batch_rating_uid)
         count += len(batch_result)
 

@@ -20,7 +20,9 @@ class Data(object):
 
         #get number of users and items
         self.n_users, self.n_items = 0, 0
+        # max user's uid, max train items
         self.n_train, self.n_test = 0, 0
+        # number of train items, number of test items
         self.neg_pools = {}
 
         self.exist_users = []
@@ -54,6 +56,8 @@ class Data(object):
         self.R = sp.dok_matrix((self.n_users, self.n_items), dtype=np.float32)
 
         self.train_items, self.test_set = {}, {}
+        # -> key: uid, value: [train_items]
+        # -> key: uid, value: [test_set]
         with open(train_file) as f_train:
             with open(test_file) as f_test:
                 for l in f_train.readlines():
@@ -109,14 +113,15 @@ class Data(object):
         t2 = time()
 
         def mean_adj_single(adj):
+            # 인접 행렬 정규화
             # D^-1 * A
-            rowsum = np.array(adj.sum(1))
+            rowsum = np.array(adj.sum(1)) # 행마다 합
 
-            d_inv = np.power(rowsum, -1).flatten()
+            d_inv = np.power(rowsum, -1).flatten() # 역수로 정규화, [n_row, 1] => [n_row, ]
             d_inv[np.isinf(d_inv)] = 0.
-            d_mat_inv = sp.diags(d_inv)
+            d_mat_inv = sp.diags(d_inv) # 역행렬
 
-            norm_adj = d_mat_inv.dot(adj)
+            norm_adj = d_mat_inv.dot(adj) # 원본과 역행렬 dot product
             # norm_adj = adj.dot(d_mat_inv)
             print('generate single-normalized adjacency matrix.')
             return norm_adj.tocoo()
@@ -165,6 +170,7 @@ class Data(object):
         def sample_pos_items_for_u(u, num):
             # sample num pos items for u-th user
             pos_items = self.train_items[u]
+            # pos_items -> user와 인접한 items
             n_pos_items = len(pos_items)
             pos_batch = []
             while True:
@@ -180,6 +186,7 @@ class Data(object):
         def sample_neg_items_for_u(u, num):
             # sample num neg items for u-th user
             neg_items = []
+            # neg_items -> user와 인접하지 않은 items
             while True:
                 if len(neg_items) == num:
                     break

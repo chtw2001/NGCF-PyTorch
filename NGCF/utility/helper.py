@@ -33,6 +33,8 @@ def merge_two_dicts(x, y):
     return z
 
 def early_stopping(log_value, best_value, stopping_step, expected_order='acc', flag_step=100):
+    # log_value -> ret['recall'][0]
+    # best_value -> cur_best_pre_0
     # early stopping strategy:
     assert expected_order in ['acc', 'dec']
 

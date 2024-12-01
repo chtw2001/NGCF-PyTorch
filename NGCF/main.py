@@ -19,6 +19,7 @@ from time import time
 if __name__ == '__main__':
 
     args.device = torch.device('cuda:' + str(args.gpu_id))
+    # args.device = torch.device('mps') # didn't work
 
     plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
 
@@ -46,6 +47,7 @@ if __name__ == '__main__':
 
         for idx in range(n_batch):
             users, pos_items, neg_items = data_generator.sample()
+            # batch_size 만큼 user, pos_item, neg_item 랜덤 샘플링
             u_g_embeddings, pos_i_g_embeddings, neg_i_g_embeddings = model(users,
                                                                            pos_items,
                                                                            neg_items,
