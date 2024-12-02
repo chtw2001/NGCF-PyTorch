@@ -15,8 +15,8 @@ class Data(object):
         self.path = path
         self.batch_size = batch_size
 
-        train_file = path + '/train.txt'
-        test_file = path + '/test.txt'
+        train_file = '/Users/chtw2001/Documents/lab/NGCF-PyTorch/Data/gowalla/train.txt'#path + '/train.txt'
+        test_file = '/Users/chtw2001/Documents/lab/NGCF-PyTorch/Data/gowalla/test.txt'#path + '/test.txt'
 
         #get number of users and items
         self.n_users, self.n_items = 0, 0
@@ -103,6 +103,7 @@ class Data(object):
         t1 = time()
         adj_mat = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
         adj_mat = adj_mat.tolil()
+        # self.R = sp.dok_matrix((self.n_users, self.n_items), dtype=np.float32)
         R = self.R.tolil()
 
         adj_mat[:self.n_users, self.n_users:] = R
@@ -115,7 +116,7 @@ class Data(object):
         def mean_adj_single(adj):
             # 인접 행렬 정규화
             # D^-1 * A
-            rowsum = np.array(adj.sum(1)) # 행마다 합
+            rowsum = np.array(adj.sum(1)) # 열마다 합
 
             d_inv = np.power(rowsum, -1).flatten() # 역수로 정규화, [n_row, 1] => [n_row, ]
             d_inv[np.isinf(d_inv)] = 0.
@@ -288,3 +289,11 @@ class Data(object):
 
 
         return split_uids, split_state
+    
+from parser import parse_args
+args = parse_args()
+
+# data_generator = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
+if __name__ == '__main__':
+    data = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
+    wait = input()

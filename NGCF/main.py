@@ -22,7 +22,8 @@ if __name__ == '__main__':
     # args.device = torch.device('mps') # didn't work
 
     plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
-
+    # norm_adj -> 처음에는 단위행렬
+    # 학습 도중에도 새롭게 업데이트 되지 않는데, 어떤 의미를 가진건지?
     args.node_dropout = eval(args.node_dropout)
     args.mess_dropout = eval(args.mess_dropout)
 

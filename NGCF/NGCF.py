@@ -119,6 +119,7 @@ class NGCF(nn.Module):
                                     self.node_dropout,
                                     self.sparse_norm_adj._nnz()) if drop_flag else self.sparse_norm_adj
                                                 # ._nnz() -> None-Zero Number
+        # 매 학습 마다 user-item간 random한 dropout을 수행
         # A_hat -> dropout 적용한 희소 행렬
         # dropout은 신경망의 노드에 적용하는것 아닌가? 인접행렬에 적용하는 이유는?
 
