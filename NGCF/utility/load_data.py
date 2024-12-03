@@ -15,8 +15,8 @@ class Data(object):
         self.path = path
         self.batch_size = batch_size
 
-        train_file = '/Users/chtw2001/Documents/lab/NGCF-PyTorch/Data/gowalla/train.txt'#path + '/train.txt'
-        test_file = '/Users/chtw2001/Documents/lab/NGCF-PyTorch/Data/gowalla/test.txt'#path + '/test.txt'
+        train_file = path + '/train.txt'
+        test_file = path + '/test.txt'
 
         #get number of users and items
         self.n_users, self.n_items = 0, 0
@@ -290,10 +290,10 @@ class Data(object):
 
         return split_uids, split_state
     
-from parser import parse_args
-args = parse_args()
+# from parser import parse_args
+# args = parse_args()
 
-# data_generator = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
-if __name__ == '__main__':
-    data = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
-    wait = input()
+# # data_generator = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
+# if __name__ == '__main__':
+#     data = Data(path=args.data_path + args.dataset, batch_size=args.batch_size)
+#     wait = input()

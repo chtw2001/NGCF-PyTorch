@@ -39,7 +39,7 @@ if __name__ == '__main__':
     """
     cur_best_pre_0, stopping_step = 0, 0
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-
+    print(model.parameters())
     loss_loger, pre_loger, rec_loger, ndcg_loger, hit_loger = [], [], [], [], []
     for epoch in range(args.epoch):
         t1 = time()

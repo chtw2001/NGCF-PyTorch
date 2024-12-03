@@ -121,40 +121,46 @@ class NGCF(nn.Module):
                                                 # ._nnz() -> None-Zero Number
         # 매 학습 마다 user-item간 random한 dropout을 수행
         # A_hat -> dropout 적용한 희소 행렬
+        # A_hat은 각 user, item 노드가 자기 자신과 연결되어 있다는 의미? 근데 몇 노드는 dropout되어있음
         # dropout은 신경망의 노드에 적용하는것 아닌가? 인접행렬에 적용하는 이유는?
 
         ego_embeddings = torch.cat([self.embedding_dict['user_emb'],
                                     self.embedding_dict['item_emb']], 0)
-        # [user_emb[0], ... user_emb[n-1], item_emb[0], ... item_emb[n-1]]
+        # ((user_n+item_n), emb_size)
+        # [user_emb[0], ... user_emb[n-1], item_emb[0], ... item_emb[n-1], [value... 64개]]
         # item-user 초기 상태
 
         all_embeddings = [ego_embeddings]
 
         for k in range(len(self.layers)):
             side_embeddings = torch.sparse.mm(A_hat, ego_embeddings)
-            # 행렬 곱을 하여 희소 행렬로부터 embedding을 업데이트
-            # 원본 인접 행렬 x embedding
-            # 원본 인접 행렬의 user-item간 연결 정보를 사용해 임베팅 정보 집계
+            # 행렬 곱을 하여 초기 가중치로 embedding을 업데이트
+            # 인접행렬 mask x embedding
+            # embedding 정보 dropout?
             # (user_n+item_n, user_n+item_n) x (user_n+item_n, 64) -> (user_n+item_n, 64) matrix
 
             # transformed sum messages of neighbors.
             sum_embeddings = torch.matmul(side_embeddings, self.weight_dict['W_gc_%d' % k]) \
                                              + self.weight_dict['b_gc_%d' % k]
-            # ((원본 인접 행렬 x embedding) x sum of graph convolution weight) + bias
+            # (user_n+item_n, 64) x (graph convolution weight) + bias
+            # => (user_n+item_n, 64)
 
             # bi messages of neighbors.
             # element-wise product
             bi_embeddings = torch.mul(ego_embeddings, side_embeddings)
-            # embedding x (원본 인접 행렬 x embedding)
+            # ((user_n+item_n), 64) x ((user_n+item_n), 64)
+            # => ((user_n+item_n), 64)
             # embedding의 독립성을 유지하면서 이웃 정보도 포함
             
             # transformed bi messages of neighbors.
             bi_embeddings = torch.matmul(bi_embeddings, self.weight_dict['W_bi_%d' % k]) \
                                             + self.weight_dict['b_bi_%d' % k]
-            # ((embedding x (원본 인접 행렬 x embedding)) x sum of bi-interaction weight)) + bias
+            # ((user_n+item_n), 64) x (bi-interaction weight) + bias
+            # => ((user_n+item_n), 64)
 
             # non-linear activation.
             ego_embeddings = nn.LeakyReLU(negative_slope=0.2)(sum_embeddings + bi_embeddings)
+            # 자기 자신 + 이웃 임베딩
             # 집계 결과에 activation 함수 적용
 
             # message dropout.
@@ -167,6 +173,9 @@ class NGCF(nn.Module):
 
             all_embeddings += [norm_embeddings]
 
+        # [norm_embeddings1, norm_embeddings2, norm_embeddings3, norm_embeddings4]
+        # norm_embeddings.shape => ((user_n + item_n), 64)
+        # ((user_n + item_n), 256)
         all_embeddings = torch.cat(all_embeddings, 1)
         u_g_embeddings = all_embeddings[:self.n_user, :]
         i_g_embeddings = all_embeddings[self.n_user:, :]
@@ -175,9 +184,8 @@ class NGCF(nn.Module):
         *********************************************************
         look up.
         """
+        # (batch_size, 256)
         u_g_embeddings = u_g_embeddings[users, :]
-        # u_g_embeddings = [원본, layer 1, layer 2, layer3]
-        # user embedding 결과가 모두 들어있음
         pos_i_g_embeddings = i_g_embeddings[pos_items, :]
         neg_i_g_embeddings = i_g_embeddings[neg_items, :]
 
